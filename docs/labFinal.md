@@ -36,7 +36,7 @@
 建议论文章节长度安排，摘要+引言1页半、方法2页、实验+结论2页、引用1页。<br>
 下图是一个论文长度不规范的示例。
 
-<img width=300 alt="论文长度不足示例" src="/VLSI-FPGA/advanced/img/paper-length-rule.png" style="margin: auto; display: flex;">
+<img width=300 alt="论文长度不足示例" src="/VLSI-Partition/advanced/img/paper-length-rule.png" style="margin: auto; display: flex;">
 
 ### 如何提交
 

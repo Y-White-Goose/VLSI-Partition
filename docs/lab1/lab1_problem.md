@@ -111,7 +111,7 @@ make all
 1. 创建一个文件夹`.vscode`和两个文件`launch.json`和`tasks.json`。
 2. `launch.json`填写以下内容：
 > 注意`args`中的ibm01.hgr路径是否和你实际存放位置一致。
-> 助教们本地测试设置的Vscode的工作路径是`~/VLSI-FPGA/lab1`，如果你的路径不是这个，请自行修正。
+> 助教们本地测试设置的Vscode的工作路径是`~/VLSI-Partition/lab1`，如果你的路径不是这个，请自行修正。
 
 ```json
 {

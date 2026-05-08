@@ -83,6 +83,16 @@
 4. 算法可视化实现，为自己实现的算法添加可视化模块。
 
 > 欢迎各同学对本课程提出任何的建议，添加到大作业附件中。
+
+## 本仓库内容
+
+本仓库选择 **实验一（划分算法）** 作为课程大作业，包含：
+
+- [`lab1/`](/lab1/lab1_problem) — 图划分算法基础实现代码
+- [`docs/lab1/`](/lab1/lab1_problem) — 实验一文档（基础要求 + 进阶要求）
+- [`docs/advanced/partition_problem_advanced.md`](/advanced/partition_problem_advanced) — 划分进阶要求文档
+- [`docs/labFinal.md`](labFinal) — 大作业说明
+
 ## Acknowledgement
 
 基本实验来自[BYU-ECEn629](https://byu-cpe.github.io/ecen629/syllabus/)，本课程对其进行了一些适应性改造。并添加了进阶实验内容。
