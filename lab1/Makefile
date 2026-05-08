@@ -1,4 +1,4 @@
-SRC = main.cpp Graph.cpp Net.cpp Node.cpp solution.cpp
+SRC = main.cpp Graph.cpp Net.cpp Node.cpp solution.cpp evaluate.cpp
 OBJ = $(SRC:.cpp=.o)
 
 CXX = g++
