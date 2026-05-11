@@ -1,11 +1,9 @@
-SRC = main.cpp Graph.cpp Net.cpp Node.cpp solution.cpp evaluate.cpp
+SRC = main.cpp Graph.cpp Net.cpp Node.cpp solution.cpp
 OBJ = $(SRC:.cpp=.o)
 
 CXX = g++
-# CFLAGS = -Wall -Wextra -Werror -std=c++17 -pedantic
-# CFLAGS += -g
-
-CFLAGS = -Wall -Wextra -Werror -std=c++17 -pedantic -O3
+CFLAGS = -Wall -Wextra -Werror -std=c++17 -pedantic
+CFLAGS += -g
 
 all: main
 
