@@ -1,10 +1,9 @@
 #ifndef EVALUATE_H
 #define EVALUATE_H
-#include <set>
+#include <vector>
 #include "Graph.h"
 
-int calculate_cut(Graph graph, set<int> X, set<int> Y);
-
-int evaluate(Graph graph, string partition_name);
+int evaluate_kway(Graph &graph, const std::vector<int>& part, int K);
+int evaluate(Graph graph, std::string partition_name, int K);
 
 #endif

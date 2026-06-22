@@ -1,5 +1,3 @@
-#include <set>
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,50 +5,35 @@
 
 using namespace std;
 
-#define BIPARTITION_RATIO 0.02
-
-int calculate_cut(Graph graph, set<int> X, set<int> Y) {
-    int size_X = X.size();
-    int size_Y = Y.size();
-    int size = size_X + size_Y;
-    if(!(((size_X * 1.0 / size >= 0.5-BIPARTITION_RATIO) && (size_X * 1.0 / size <= 0.5+BIPARTITION_RATIO)) \
-        && ((size_Y * 1.0 / size >= 0.5-BIPARTITION_RATIO) && (size_Y * 1.0 / size <= 0.5+BIPARTITION_RATIO)))) {
-        cerr << "The size of partition X and Y doesn't satisfy the requirement!" << endl;
-        return -1;
-    }
-
+int evaluate_kway(Graph &graph, const vector<int>& part, int K) {
     int cut = 0;
     vector<Net *> nets = graph.get_nets();
-    for(const auto& net : nets) {
-        bool in_X = false, in_Y = false;
-        for(const auto node : net->get_nodes()) {
-            int index = node->get_index();
-            if(X.find(index) != X.end())    in_X = true;
-            if(Y.find(index) != Y.end())    in_Y = true;
+    for (const auto& net : nets) {
+        vector<bool> spans(K, false);
+        int span_count = 0;
+        for (const auto node : net->get_nodes()) {
+            int p = part[node->get_index()];
+            if (!spans[p]) {
+                spans[p] = true;
+                span_count++;
+            }
         }
-        if(in_X && in_Y)    cut++;
+        if (span_count > 1) {
+            cut += (span_count - 1);
+        }
     }
     return cut;
 }
 
-int evaluate(Graph graph, string partition_name) {
-    set<int> X;
-    set<int> Y;
-    string line;
+int evaluate(Graph graph, string partition_name, int K) {
+    vector<int> part(graph.get_node_num() + 1, 0);
     ifstream partition_file(partition_name);
     int i = 1;
+    string line;
     while(getline(partition_file, line)) {
         istringstream iss(line);
-        int partition;
-        iss >> partition;
-        if(partition == 0){
-            X.insert(i);
-        }
-        else{
-            Y.insert(i);
-        }
+        iss >> part[i];
         i++;
     }
-    
-    return calculate_cut(graph, X, Y);
+    return evaluate_kway(graph, part, K);
 }
