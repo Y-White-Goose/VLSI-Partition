@@ -2,18 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+# 绘制随机重启结果图
 def plot_random_restart_results():
-    """
-    图1: 随机重启结果图
-    显示所有 trial 的最终 cut size，最佳 trial 高亮显示
-    """
     try:
         trial_df = pd.read_csv("fm_trial_results.csv")
     except FileNotFoundError:
         print("Error: fm_trial_results.csv not found. Run ./main first.")
         return
-
     # 读取最佳 trial 编号
     try:
         with open("best_trial_id.txt", "r") as f:
@@ -27,10 +22,8 @@ def plot_random_restart_results():
 
     # 颜色设置：最佳 trial 用红色，其余用蓝色
     colors = ['red' if t == best_trial else 'steelblue' for t in trials]
-
     plt.figure(figsize=(12, 5))
     bars = plt.bar(trials, cuts, color=colors, edgecolor='black', linewidth=0.5)
-
     # 在柱子上标注数值
     for bar, cut in zip(bars, cuts):
         plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + max(cuts) * 0.01,
@@ -47,24 +40,18 @@ def plot_random_restart_results():
     legend_elements = [Patch(facecolor='red', label=f'Best Trial ({best_trial})'),
                        Patch(facecolor='steelblue', label='Other Trials')]
     plt.legend(handles=legend_elements)
-
     plt.tight_layout()
     plt.savefig("random_restart_results.png", dpi=300, bbox_inches='tight')
     print("Saved: random_restart_results.png")
     plt.close()
 
-
+# 绘制最佳 trial 的 pass 图
 def plot_best_trial_passes():
-    """
-    图2: 最佳 Trial 的 Pass 图
-    显示最佳 trial 中每个 pass 的最佳 cumulative gain 变化
-    """
     try:
         df = pd.read_csv("fm_all_logs.csv")
     except FileNotFoundError:
         print("Error: fm_all_logs.csv not found. Run ./main first.")
         return
-
     # 读取最佳 trial 编号
     try:
         with open("best_trial_id.txt", "r") as f:
@@ -74,10 +61,8 @@ def plot_best_trial_passes():
         return
 
     print(f"Best trial: {best_trial}")
-
     # 筛选最佳 trial 的数据
     trial_data = df[df['Trial'] == best_trial]
-
     # 获取该 trial 的所有 pass 编号
     passes = sorted(trial_data['Pass'].unique())
 
@@ -92,7 +77,6 @@ def plot_best_trial_passes():
     plt.figure(figsize=(10, 5))
     plt.plot(best_df['Pass'], best_df['Best_Cumulative_Gain'],
              marker='o', linestyle='-', color='blue', linewidth=2, markersize=6)
-
     # 标注每个点的数值
     for _, row in best_df.iterrows():
         plt.text(row['Pass'], row['Best_Cumulative_Gain'] + best_df['Best_Cumulative_Gain'].max() * 0.01,

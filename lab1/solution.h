@@ -20,41 +20,31 @@ public:
     void my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y);
 
 private:
-    // ========== FM 核心数据 ==========
-    // part_[i] = 0 表示节点 i 在 X 集合, 1 表示在 Y 集合 (1-indexed)
-    vector<int> part_;
-    // gain_[i] = 节点 i 移动到另一侧时的 cut size 减少量
-    vector<int> gain_;
-    // locked_[i] = true 表示节点 i 在当前 pass 中已被移动过
-    vector<bool> locked_;
+    // FM 核心数据
+    vector<int> part_; // 节点划分状态，0 表示节点 i 在 X 集合, 1 表示在 Y 集合
+    vector<int> gain_; // 节点增益
+    vector<bool> locked_; // 记录节点是否已锁定
 
-    // ========== 超网分布计数 ==========
-    // net_count_X_[nid] = 超网 nid 在 X 中的节点数
-    vector<int> net_count_X_;
-    // net_count_Y_[nid] = 超网 nid 在 Y 中的节点数
-    vector<int> net_count_Y_;
+    // 超网分布计数，用于快速计算增益和 cut size
+    vector<int> net_count_X_; // 超网 nid 在 X 中的节点数
+    vector<int> net_count_Y_; // 超网 nid 在 Y 中的节点数
 
-    // ========== 桶结构 (Bucket Array) ==========
-    // 两套桶: [0] 存放 X 侧节点(按移动到 Y 的增益), [1] 存放 Y 侧节点(按移动到 X 的增益)
-    // bucket_heads_[side][gain + offset] = 链表头节点 id, -1 表示空
+    // 桶结构：[0] 存放 X 侧节点(按移动到 Y 的增益), [1] 存放 Y 侧节点
     vector<int> bucket_heads_[2];
-    // bucket_next_[node_id] / bucket_prev_[node_id] = 双向链表指针
+    // 双向链表指针
     vector<int> bucket_next_;
     vector<int> bucket_prev_;
-    // max_gain_[side] = 当前该侧非空桶的最大增益值
-    int max_gain_[2];
-    // gain_offset_ = max_degree, 用于将增益值映射到数组下标
-    int gain_offset_;
-    // max_degree_ = 任意节点的最大超网度数
-    int max_degree_;
 
-    // ========== 平衡约束 ==========
+    int max_gain_[2]; // 当前该侧非空桶的最大增益值
+    int gain_offset_; // 最大增益绝对值 (即 max_degree)，用于桶数组索引偏移
+    int max_degree_; // 任意节点的最大超网度数 (用于确定桶大小)
+
+    // 平衡约束
     int min_part_size_;   // ceil(0.48 * N)
     int max_part_size_;   // floor(0.52 * N)
     int total_nodes_;
     int current_X_size_;
 
-    // ========== 核心方法 ==========
     // 初始化划分 (随机将节点分为 X 和 Y, 满足平衡约束)
     void init_partition(Graph &graph, mt19937 &rng);
     // 计算所有节点的初始增益
@@ -73,7 +63,7 @@ private:
     void fm_pass(Graph &graph);
     // 局部增益更新: 移动节点后更新受影响邻居的增益
     void update_gains_after_move(Graph &graph, int moved_node, int from_side);
-    // 计算当前 cut size (基于 net_count_X_/Y_)
+    // 计算当前 cut size
     int compute_cut_size(int num_nets);
 };
 
