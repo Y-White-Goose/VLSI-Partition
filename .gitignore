@@ -36,3 +36,8 @@
 
 # build file
 /build
+
+# FM 算法运行时日志及可视化中间文件
+fm_all_logs.csv
+fm_trial_results.csv
+best_trial_id.txt
