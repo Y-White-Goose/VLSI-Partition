@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstring>
 
+// 读取文件并构建图结构
 void Solution::read_benchmark(Graph &graph, string benchmark_name) {
     ifstream file(benchmark_name);
 
@@ -18,7 +19,6 @@ void Solution::read_benchmark(Graph &graph, string benchmark_name) {
     iss >> edge_num;
     iss >> node_num;
 
-    
     for(int i = 0; i < edge_num; i++) {
         getline(file, line);
         istringstream iss(line);
@@ -33,14 +33,10 @@ void Solution::read_benchmark(Graph &graph, string benchmark_name) {
         }
         
     }
-
     file.close();
 }
 
-// ============================================================================
-// 桶操作 (Bucket Array Operations)
-// ============================================================================
-
+// 桶插入，将节点按照 gain 值插入对应增益桶的链表头
 void Solution::bucket_insert(int node_id, int side) {
     int idx = gain_[node_id] + gain_offset_;
     // 插入到链表头部
@@ -56,6 +52,7 @@ void Solution::bucket_insert(int node_id, int side) {
     }
 }
 
+// 桶移除，将节点从对应增益桶的双向链表中移除
 void Solution::bucket_remove(int node_id, int side) {
     int idx = gain_[node_id] + gain_offset_;
     // 从双向链表中移除
@@ -79,6 +76,7 @@ void Solution::bucket_remove(int node_id, int side) {
     bucket_prev_[node_id] = -1;
 }
 
+// 从指定侧的桶中获取增益最大的满足平衡约束的节点
 int Solution::bucket_get_best_node(int side) {
     // 从最大增益开始向下扫描
     for (int g = max_gain_[side]; g >= -max_degree_; g--) {
@@ -92,7 +90,6 @@ int Solution::bucket_get_best_node(int side) {
                     return node_id;
                 }
             } else {
-                // 从 Y 移动到 X: X 大小加 1
                 if (current_X_size_ < max_part_size_) {
                     return node_id;
                 }
@@ -103,6 +100,7 @@ int Solution::bucket_get_best_node(int side) {
     return -1; // 没有满足平衡约束的节点
 }
 
+// 更新节点增益，先从旧增益桶中移除，再更新增益值，最后插入新增益桶
 void Solution::update_node_gain(int node_id, int new_gain, int side) {
     int old_gain = gain_[node_id];
     if (old_gain == new_gain) return;
@@ -111,16 +109,12 @@ void Solution::update_node_gain(int node_id, int new_gain, int side) {
     bucket_insert(node_id, side);
 }
 
-// ============================================================================
-// 初始化与增益计算
-// ============================================================================
-
+// 初始化划分
 void Solution::init_partition(Graph & /*graph*/, mt19937 &rng) {
     // 随机打乱节点顺序，然后前一半放入 X (0)，后一半放入 Y (1)
     vector<int> perm(total_nodes_);
     iota(perm.begin(), perm.end(), 1); // 填充 1..N
     shuffle(perm.begin(), perm.end(), rng);
-
     int half = total_nodes_ / 2;
     for (int i = 0; i < total_nodes_; i++) {
         part_[perm[i]] = (i < half) ? 0 : 1;
@@ -128,14 +122,13 @@ void Solution::init_partition(Graph & /*graph*/, mt19937 &rng) {
     current_X_size_ = half;
 }
 
+// 计算所有节点的初始增益
 void Solution::compute_initial_gains(Graph &graph) {
     (void)graph;
-
-    // 重置超网分布计数
+    // 重置超边分布计数
     fill(net_count_X_.begin(), net_count_X_.end(), 0);
     fill(net_count_Y_.begin(), net_count_Y_.end(), 0);
-
-    // 统计每个超网在 X 和 Y 中的节点数
+    // 统计每个超边在 X 和 Y 中的节点数
     for (Node *node : graph.get_nodes()) {
         int nid = node->get_index();
         for (Net *net : node->get_nets()) {
@@ -146,27 +139,21 @@ void Solution::compute_initial_gains(Graph &graph) {
                 net_count_Y_[net_id]++;
         }
     }
-
     // 计算每个节点的初始增益
     for (Node *node : graph.get_nodes()) {
         int nid = node->get_index();
         int g = 0;
         for (Net *net : node->get_nets()) {
             int net_id = net->get_index();
-            int F = net_count_X_[net_id]; // 该超网在 X 中的节点数
-            int T = net_count_Y_[net_id]; // 该超网在 Y 中的节点数
-
+            int F = net_count_X_[net_id]; // 该超边在 X 中的节点数
+            int T = net_count_Y_[net_id]; // 该超边在 Y 中的节点数
             if (part_[nid] == 0) {
                 // 节点在 X 中，计算移动到 Y 的增益
-                // 若 T==0 且 F>1: 移动后超网被切割 → 增益 -1
                 if (T == 0 && F > 1) g--;
-                // 若 T>0 且 F==1: 移动后超网不再被切割 → 增益 +1
                 if (T > 0 && F == 1) g++;
             } else {
                 // 节点在 Y 中，计算移动到 X 的增益
-                // 若 F==0 且 T>1: 移动后超网被切割 → 增益 -1
                 if (F == 0 && T > 1) g--;
-                // 若 F>0 且 T==1: 移动后超网不再被切割 → 增益 +1
                 if (F > 0 && T == 1) g++;
             }
         }
@@ -174,6 +161,7 @@ void Solution::compute_initial_gains(Graph &graph) {
     }
 }
 
+// 构建桶结构 (将所有未锁定节点插入对应桶)
 void Solution::build_buckets() {
     // 重置所有桶
     for (int s = 0; s < 2; s++) {
@@ -182,7 +170,6 @@ void Solution::build_buckets() {
     }
     fill(bucket_next_.begin(), bucket_next_.end(), -1);
     fill(bucket_prev_.begin(), bucket_prev_.end(), -1);
-
     // 将所有未锁定节点插入对应侧的桶
     for (int i = 1; i <= total_nodes_; i++) {
         if (!locked_[i]) {
@@ -191,19 +178,14 @@ void Solution::build_buckets() {
     }
 }
 
-// ============================================================================
 // 局部增益更新 (移动节点后更新受影响邻居的增益)
-// ============================================================================
-
 void Solution::update_gains_after_move(Graph &graph, int moved_node, int from_side) {
     Node *base = graph.get_node(moved_node);
-
     for (Net *net : base->get_nets()) {
         int net_id = net->get_index();
         int F = net_count_X_[net_id]; // 移动前的 X 侧计数
         int T = net_count_Y_[net_id]; // 移动前的 Y 侧计数
-
-        // 更新超网分布计数
+        // 更新超边分布计数
         if (from_side == 0) {
             net_count_X_[net_id]--;
             net_count_Y_[net_id]++;
@@ -211,14 +193,11 @@ void Solution::update_gains_after_move(Graph &graph, int moved_node, int from_si
             net_count_X_[net_id]++;
             net_count_Y_[net_id]--;
         }
-
-        // 遍历该超网中的所有节点，更新增益
+        // 遍历该超边中的所有节点，更新增益
         for (Node *cell : net->get_nodes()) {
             int cid = cell->get_index();
             if (locked_[cid]) continue; // 已锁定的节点不更新
-
             int delta = 0;
-
             if (from_side == 0) {
                 // 基节点从 X 移动到 Y
                 if (part_[cid] == 0) {
@@ -254,7 +233,6 @@ void Solution::update_gains_after_move(Graph &graph, int moved_node, int from_si
                     }
                 }
             }
-
             if (delta != 0) {
                 int new_gain = gain_[cid] + delta;
                 update_node_gain(cid, new_gain, part_[cid]);
@@ -263,35 +241,26 @@ void Solution::update_gains_after_move(Graph &graph, int moved_node, int from_si
     }
 }
 
-// ============================================================================
 // 单次 FM Pass
-// ============================================================================
-
 void Solution::fm_pass(Graph &graph) {
     // 解锁所有节点
     fill(locked_.begin(), locked_.end(), false);
-
     // 重新计算增益 (因为划分可能在上一次 pass 后发生了变化)
     compute_initial_gains(graph);
-
     // 构建桶结构
     build_buckets();
-
     // 记录移动序列，用于回溯
     vector<int> moves;           // 按顺序记录被移动的节点 id
     vector<int> gains_at_step;   // 每次移动后的累计增益
     int cumulative_gain = 0;
     int best_gain = 0;
     int best_step = 0;           // 达到最佳累计增益时的移动步数
-
     while (true) {
         // 分别从 X 侧和 Y 侧获取最佳候选节点
         int best_X = bucket_get_best_node(0);
         int best_Y = bucket_get_best_node(1);
-
         int chosen = -1;
         int from_side = -1;
-
         if (best_X != -1 && best_Y != -1) {
             // 两侧都有候选，选择增益更大的
             if (gain_[best_X] >= gain_[best_Y]) {
@@ -310,10 +279,8 @@ void Solution::fm_pass(Graph &graph) {
         } else {
             break; // 没有满足平衡约束的可移动节点
         }
-
         // 从桶中移除该节点
         bucket_remove(chosen, from_side);
-
         // 执行移动
         part_[chosen] = 1 - from_side;
         locked_[chosen] = true;
@@ -332,12 +299,10 @@ void Solution::fm_pass(Graph &graph) {
             best_gain = cumulative_gain;
             best_step = (int)moves.size();
         }
-
         // 局部更新受影响邻居的增益
         update_gains_after_move(graph, chosen, from_side);
     }
-
-    // 回溯：撤销 best_step 之后的所有移动
+    // 循环完成过后撤销 best_step 之后的所有移动
     for (int i = (int)moves.size() - 1; i >= best_step; i--) {
         int node_id = moves[i];
         // 恢复原始划分
@@ -351,10 +316,7 @@ void Solution::fm_pass(Graph &graph) {
     }
 }
 
-// ============================================================================
-// 辅助函数：计算当前 cut size
-// ============================================================================
-
+// 计算当前 cut size
 int Solution::compute_cut_size(int num_nets) {
     int cut = 0;
     for (int nid = 0; nid < num_nets; nid++) {
@@ -363,13 +325,9 @@ int Solution::compute_cut_size(int num_nets) {
     return cut;
 }
 
-// ============================================================================
-// 主入口：多 Pass FM 算法 (带随机重启)
-// ============================================================================
-
+// 多 Pass FM 算法 (带随机重启)
 void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
     total_nodes_ = graph.get_node_num();
-
     // 计算最大度数 (用于确定桶数组大小)
     max_degree_ = 0;
     for (Node *node : graph.get_nodes()) {
@@ -390,7 +348,7 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
     net_count_X_.assign(num_nets, 0);
     net_count_Y_.assign(num_nets, 0);
 
-    // 初始化桶头数组: 2 侧 × (2*max_degree_ + 1) 个槽位
+    // 初始化桶头数组
     int bucket_size = 2 * max_degree_ + 1;
     for (int s = 0; s < 2; s++) {
         bucket_heads_[s].assign(bucket_size, -1);
@@ -400,20 +358,16 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
     min_part_size_ = (int)ceil(0.48 * total_nodes_);
     max_part_size_ = (int)floor(0.52 * total_nodes_);
 
-    // ========== 随机重启：尝试多个随机种子，取最优结果 ==========
+    // 随机重启尝试多个随机种子，取最优结果
     int best_cut = INT_MAX;
     vector<int> best_part(total_nodes_ + 1, 0);
-
-    // 对于小数据集 (< 50k 节点) 尝试 5 次，大数据集尝试 2 次
-    int num_restarts = (total_nodes_ < 50000) ? 30 : 30;
-
+    // 对于数据集尝试 30 次
+    int num_restarts = 30;
     for (int trial = 0; trial < num_restarts; trial++) {
         mt19937 rng(trial * 12345 + 42); // 确定性种子，保证可复现
-
         // 随机初始划分
         init_partition(graph, rng);
-
-        // 初始化超网分布计数
+        // 初始化超边分布计数
         fill(net_count_X_.begin(), net_count_X_.end(), 0);
         fill(net_count_Y_.begin(), net_count_Y_.end(), 0);
         for (Node *node : graph.get_nodes()) {
@@ -426,14 +380,12 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
                     net_count_Y_[net_id]++;
             }
         }
-
-        // 多 Pass 迭代
+        // 多 Pass 迭代，直到没有改进
         int pass = 0;
         while (true) {
             int prev_cut = compute_cut_size(num_nets);
             fm_pass(graph);
-
-            // 重新计算超网分布
+            // 重新计算超边分布
             fill(net_count_X_.begin(), net_count_X_.end(), 0);
             fill(net_count_Y_.begin(), net_count_Y_.end(), 0);
             for (Node *node : graph.get_nodes()) {
@@ -446,7 +398,7 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
                         net_count_Y_[net_id]++;
                 }
             }
-
+            // 计算当前 cut 和改进量
             int curr_cut = compute_cut_size(num_nets);
             int improvement = prev_cut - curr_cut;
 
@@ -454,7 +406,6 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
                 cout << "Trial " << trial << " Pass " << pass << ": cut = " << curr_cut
                      << ", improvement = " << improvement << endl;
             }
-
             if (improvement <= 0) break;
             pass++;
         }
@@ -462,16 +413,13 @@ void Solution::my_partition_algorithm(Graph &graph, set<int> &X, set<int> &Y) {
         // 计算最终 cut
         int final_cut = compute_cut_size(num_nets);
         cout << "Trial " << trial << " final cut = " << final_cut << endl;
-
         if (final_cut < best_cut) {
             best_cut = final_cut;
             best_part = part_;
         }
     }
-
     // 使用最优结果
     part_ = best_part;
-
     // 输出结果到 set
     X.clear();
     Y.clear();

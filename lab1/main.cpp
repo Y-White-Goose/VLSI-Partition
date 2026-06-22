@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     cout << "Num nodes: " << graph.get_node_num() << endl;
     cout << "Num nets: " << graph.get_net_num() << endl;
 
-    // 1. 开始计时，执行划分算法
+    // 开始计时，执行划分算法
     auto start_time = chrono::high_resolution_clock::now();
 
     set<int> X, Y;
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     auto end_time = chrono::high_resolution_clock::now();
     double elapsed_ms = chrono::duration<double, milli>(end_time - start_time).count();
 
-    // 2. 生成输出文件名: <benchmark_name_without_extension>_partition.txt
+    // 生成输出文件名: <benchmark_name_without_extension>_partition.txt
     string output_name = benchmark_name;
     // 移除路径前缀
     size_t slash_pos = output_name.find_last_of('/');
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     }
     output_name = "./result/" + output_name + "_partition.txt";
 
-    // 3. 输出划分结果到文件 (每行一个整数 0 或 1, 按节点 index 1..N 顺序)
+    // 输出划分结果到文件
     ofstream outfile(output_name);
     if (!outfile.is_open()) {
         cerr << "Failed to open output file: " << output_name << endl;
@@ -68,15 +68,14 @@ int main(int argc, char **argv) {
     outfile.close();
     cout << "Partition result written to: " << output_name << endl;
 
-    // 4. 评估划分结果
+    // 评估划分结果
     int cut = evaluate(graph, output_name);
     cout << "Cut size: " << cut << endl;
 
-    // 5. 输出运行时间统计
+    // 输出运行时间统计
     cout << "Total runtime: " << elapsed_ms << " ms" << endl;
     if (elapsed_ms >= 1000) {
         cout << "Total runtime: " << (elapsed_ms / 1000.0) << " s" << endl;
     }
-
     return 0;
 }
